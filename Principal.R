@@ -2,7 +2,6 @@ library(readxl)
 library(lubridate)
 library(tidyverse)
 NomeArquivo <- "CMO_A4-2020.xlsx"
-NomeArquivo <- "~/Documentos/geral/Relatórios públicos/Leilão-GF/CMO_A4-2020.xlsx"
 # Lê CMO
 CMO <- bind_rows("SE" = read_xlsx(NomeArquivo, "CMO_Sudeste", skip = 1),
                  "S" = read_xlsx(NomeArquivo, "CMO_Sul", skip = 1),
