@@ -1,6 +1,7 @@
 library(readxl)
 library(lubridate)
 library(tidyverse)
+library(furrr)
 NomeArquivo <- "CMO_A4-2020.xlsx"
 # Lê CMO
 CMO <- bind_rows("SE" = read_xlsx(NomeArquivo, "CMO_Sudeste", skip = 1),
@@ -26,3 +27,14 @@ source("funções.R")
 
 # Calcula para CVU de 100 a 300 R$/MWh, de 50 em 50, com inflexibilidade de 40 MW. 
 map_dfr(c(100, 150, 200, 250, 300), ~calcK(Pot = PDisp, CVU = ., Inflex = 40)) %>% suppressMessages()
+
+#plan(multisession, workers = 6)
+plan(sequential)
+p <- future_map_dfr(seq(0, 1000, length.out = 500), ~calcK(Pot = PDisp, CVU = ., Inflex = 0)) %>% 
+  suppressMessages() %>% filter(SSist == "SE")
+ggplot(p, aes(x = CVU)) + 
+  geom_line(aes(y = k), color = "orange") + 
+  geom_line(aes(y = GF)) + 
+  geom_line(aes(y = COP), color = "green") + 
+  geom_line(aes(y = CEC), color = "yellow")
+plan(sequential)
