@@ -48,6 +48,7 @@ CMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% mutate(VaR10 = 
   filter(CMO >= VaR10) %>% summarise(CVaR10 = mean(CMO))
 CMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% arrange(desc(CMO)) %>% 
   slice_head(prop = 0.1) %>% summarise(CVaR10 = mean(CMO))
+CMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% summarise(VaR10 = quantile(CMO, 0.9), CVaR10 = CVaR(CMO, 0.9))
 
 CMO %>% group_by(SSist) %>% summarise(mean(CMO))
 

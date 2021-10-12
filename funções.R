@@ -26,3 +26,8 @@ calcK <- function(Pot = PDisp, CVU = 250, Inflex = 0, CalculaGF = TRUE, UsaPond 
               CEC = mean(CECserie / GFu) / 8760 * 12, k = COP + CEC, COPano = sum(COPserie) / n_distinct(Série) / n_distinct(data) * 12, 
               CECano = sum(CECserie) / n_distinct(Série) / n_distinct(data) * 12)
 }
+
+CVaR <- function(x, probs = 0.5, CaudaSup = TRUE) {
+  names(probs) <- paste0(probs * 100, "%")
+  sapply(probs, function(y) mean(sort(x, decreasing = CaudaSup)[1:((1 - y) * length(x))]))
+}
