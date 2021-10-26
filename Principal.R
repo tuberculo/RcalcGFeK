@@ -28,12 +28,13 @@ source("funções.R")
 # Calcula para CVU de 100 a 300 R$/MWh, de 50 em 50, com inflexibilidade de 40 MW. 
 map_dfr(c(100, 150, 200, 250, 300), ~calcK(Pot = PDisp, CVU = ., Inflex = 40)) %>% suppressMessages()
 
-map_dfr(c(100, 150, 200, 250, 300), ~calcK(Pot = PDisp, CVU = ., Inflex = 0)) %>% mutate(k / CVU)
+map_dfr(c(100, 150, 200, 250, 300), ~calcK(Pot = PDisp, CVU = ., Inflex = 0)) %>% 
+  mutate(k / CVU)
 
 TabCMOse <- TabCMO %>% filter(SSist == "SE")
-plan(multisession, workers = 2)
+plan(multisession, workers = 9)
 #plan(sequential)
-p <- future_map_dfr(seq(0, 1000, length.out = 500), ~calcK(Pot = PDisp, CVU = ., Inflex = 0),
+p <- future_map_dfr(seq(0, 1000, length.out = 1000), ~calcK(Pot = PDisp, CVU = ., Inflex = 0, dadosCMO = TabCMOse),
                     .progress = TRUE) %>% 
   suppressMessages() %>% filter(SSist == "SE")
 ggplot(p, aes(x = CVU)) + 
@@ -41,17 +42,21 @@ ggplot(p, aes(x = CVU)) +
   geom_line(aes(y = GF)) + 
   geom_line(aes(y = COP), color = "green") + 
   geom_line(aes(y = CEC), color = "yellow")
+
+ggplot(p, aes(x = CVU)) + 
+  geom_line(aes(y = (188 - k) * GF * 8.760 / Potência), color = "orange") + 
+  geom_line(aes(y = LACEpot- COPpot))
 plan(sequential)
 
 # CMO ---------------------------------------------------------------------
-CMO %>% group_by(SSist) %>% summarise(VaR10 = quantile(CMO, 0.9))
-CMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% mutate(VaR10 = quantile(CMO, 0.9)) %>% 
+TabCMO %>% group_by(SSist) %>% summarise(VaR10 = quantile(CMO, 0.9))
+TabCMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% mutate(VaR10 = quantile(CMO, 0.9)) %>% 
   filter(CMO >= VaR10) %>% summarise(CVaR10 = mean(CMO))
-CMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% arrange(desc(CMO)) %>% 
+TabCMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% arrange(desc(CMO)) %>% 
   slice_head(prop = 0.1) %>% summarise(CVaR10 = mean(CMO))
-CMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% summarise(VaR10 = quantile(CMO, 0.9), CVaR10 = CVaR(CMO, 0.9))
+TabCMO %>% mutate(Mês = month(data)) %>% group_by(SSist, Mês) %>% summarise(VaR10 = quantile(CMO, 0.9), CVaR10 = CVaRsort(CMO, 0.9))
 
-CMO %>% group_by(SSist) %>% summarise(mean(CMO))
+TabCMO %>% group_by(SSist) %>% summarise(mean(CMO))
 
-ggplot(CMO, aes(x = SSist, y = CMO)) + geom_boxplot() + geom_violin(alpha = 0.5) + scale_y_log10()
+ggplot(TabCMO, aes(x = SSist, y = CMO)) + geom_boxplot() + geom_violin(alpha = 0.5) + scale_y_log10()
 

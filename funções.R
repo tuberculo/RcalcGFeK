@@ -21,11 +21,16 @@ calcK <- function(Pot = PDisp, CVU = 250, Inflex = 0, CalculaGF = TRUE, UsaPond 
     mutate(GFu = ifelse(UsaPond, GF, GFsemPond), PLD = pmax(pmin(CMO, PLDmax), PLDmin), 
            HorasMes = (NhoraMesReal * days_in_month(month(data)) * 24) + ((!NhoraMesReal) * 730), # Define número de horas a cada mês
            COPserie = (Geração - Inflex) * CVU * HorasMes, # Geração líquida vezes CVU vezes número de horas no mês. 
-           CECserie = (GFu - Geração) * PLD * HorasMes) %>% group_by(SSist) %>% 
+           CECserie = (GFu - Geração) * PLD * HorasMes, LACEserie = Geração * CMO * HorasMes) %>% 
+    group_by(SSist) %>% 
     summarise(Potência = Pot, CVU = CVU, Pond = UsaPond, GF = mean(GFu), COP = mean(COPserie / GFu) / 8760 * 12, 
               CEC = mean(CECserie / GFu) / 8760 * 12, k = COP + CEC, COPano = sum(COPserie) / n_distinct(Série) / n_distinct(data) * 12, 
-              CECano = sum(CECserie) / n_distinct(Série) / n_distinct(data) * 12)
+              CECano = sum(CECserie) / n_distinct(Série) / n_distinct(data) * 12, 
+              LACE = mean(LACEserie / GFsemPond) / 8760 * 12, LACEano = sum(LACEserie) / n_distinct(Série) / n_distinct(data) * 12,
+              COPpot = COPano / Pot / 1000, CECpot = CECano / Pot / 1000, LACEpot = LACEano / Pot / 1000)
 }
+
+
 
 CVaRsort <- function(x, probs = 0.5, UpperTail = TRUE) {
   names(probs) <- paste0(probs * 100, "%")
