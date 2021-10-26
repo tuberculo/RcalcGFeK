@@ -2,15 +2,15 @@ library(readxl)
 library(lubridate)
 library(tidyverse)
 library(furrr)
-NomeArquivo <- "CMO_A4-2020.xlsx"
+NomeArquivo <- "CMO_PCSimp_2021.xlsx"
 # Lê CMO
-CMO <- bind_rows("SE" = read_xlsx(NomeArquivo, "CMO_Sudeste", skip = 1),
+TabCMO <- bind_rows("SE" = read_xlsx(NomeArquivo, "CMO_Sudeste", skip = 1),
                  "S" = read_xlsx(NomeArquivo, "CMO_Sul", skip = 1),
                  "NE" = read_xlsx(NomeArquivo, "CMO_Nordeste", skip = 1),
                  "N" = read_xlsx(NomeArquivo, "CMO_Norte", skip = 1),
                  .id = "SSist")
-CMO <- rename(CMO, Série = CMO)
-CMO <- pivot_longer(CMO, !any_of(c("Série", "SSist")), names_to = "datatexto", values_to = "CMO") %>% 
+TabCMO <- rename(TabCMO, Série = CMO)
+TabCMO <- pivot_longer(TabCMO, !any_of(c("Série", "SSist")), names_to = "datatexto", values_to = "CMO") %>% 
   mutate(data = parse_date(datatexto, "%b-%y", locale = locale("pt")), .after = datatexto)
 
 # Limites de PLD
@@ -30,6 +30,7 @@ map_dfr(c(100, 150, 200, 250, 300), ~calcK(Pot = PDisp, CVU = ., Inflex = 40)) %
 
 map_dfr(c(100, 150, 200, 250, 300), ~calcK(Pot = PDisp, CVU = ., Inflex = 0)) %>% mutate(k / CVU)
 
+TabCMOse <- TabCMO %>% filter(SSist == "SE")
 plan(multisession, workers = 2)
 #plan(sequential)
 p <- future_map_dfr(seq(0, 1000, length.out = 500), ~calcK(Pot = PDisp, CVU = ., Inflex = 0),

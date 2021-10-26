@@ -1,7 +1,7 @@
-calcGera <- function(Pot = PDisp, CVU = 250, Inflex = 0, dadosCMO = CMO) {
+calcGera <- function(Pot = PDisp, CVU = 250, Inflex = 0, dadosCMO = TabCMO) {
   mutate(dadosCMO, Geração = if_else(CMO >= CVU, Pot, Inflex)) # Se CMO é maior ou igual, gera PDisp, senão, gera inflexibilidade.
 }
-calcGF <- function(Pot = PDisp, CVU = 250, Inflex = 0, Arredonda = TRUE, dadosCMO = CMO) {
+calcGF <- function(Pot = PDisp, CVU = 250, Inflex = 0, Arredonda = TRUE, dadosCMO = TabCMO) {
   resultado <- calcGera(PDisp, CVU, Inflex, dadosCMO) %>%
     mutate(GFtemp = CMO * Geração) %>% group_by(SSist) %>% summarise(GF = sum(GFtemp) / sum(CMO), GFsemPond = mean(Geração))
   if (Arredonda) {
@@ -11,13 +11,13 @@ calcGF <- function(Pot = PDisp, CVU = 250, Inflex = 0, Arredonda = TRUE, dadosCM
 }
 
 calcK <- function(Pot = PDisp, CVU = 250, Inflex = 0, CalculaGF = TRUE, UsaPond = TRUE, 
-                  ArredondaGF = TRUE, GF = 50, NhoraMesReal = TRUE, dadosCMO = CMO) { # NhoraMesReal: usa número de horas reais de cada mês 
+                  ArredondaGF = TRUE, GF = 50, NhoraMesReal = TRUE, dadosCMO = TabCMO) { # NhoraMesReal: usa número de horas reais de cada mês 
   if (CalculaGF) {
-    GFtib <- calcGF(Pot, CVU, Inflex, ArredondaGF)
+    GFtib <- calcGF(Pot, CVU, Inflex, ArredondaGF, dadosCMO)
   } else {
-    GFtib <- tibble(SSist = c("SE", "S", "NE", "N"), GF = GF, GFsemPond = GF)
+    GFtib <- tibble(SSist = unique(dadosCMO$SSist), GF = GF, GFsemPond = GF)
   }
-  calcGera(Pot, CVU, Inflex) %>% left_join(GFtib) %>% 
+  calcGera(Pot, CVU, Inflex, dadosCMO) %>% left_join(GFtib) %>% 
     mutate(GFu = ifelse(UsaPond, GF, GFsemPond), PLD = pmax(pmin(CMO, PLDmax), PLDmin), 
            HorasMes = (NhoraMesReal * days_in_month(month(data)) * 24) + ((!NhoraMesReal) * 730), # Define número de horas a cada mês
            COPserie = (Geração - Inflex) * CVU * HorasMes, # Geração líquida vezes CVU vezes número de horas no mês. 
@@ -48,3 +48,4 @@ CalcCVaR <- function(x, probs = 0.5, UpperTail = TRUE) {
       ifelse(UpperTail, 1, -1)
   })
 }
+
