@@ -27,7 +27,24 @@ calcK <- function(Pot = PDisp, CVU = 250, Inflex = 0, CalculaGF = TRUE, UsaPond 
               CECano = sum(CECserie) / n_distinct(Série) / n_distinct(data) * 12)
 }
 
-CVaR <- function(x, probs = 0.5, CaudaSup = TRUE) {
+CVaRsort <- function(x, probs = 0.5, UpperTail = TRUE) {
   names(probs) <- paste0(probs * 100, "%")
-  sapply(probs, function(y) mean(sort(x, decreasing = CaudaSup)[1:((1 - y) * length(x))]))
+  sapply(probs, function(y) mean(sort(x, decreasing = UpperTail)[1:((1 - y) * length(x))]))
+}
+
+CalcCVaR <- function(x, probs = 0.5, UpperTail = TRUE) {
+  # Based on http://www-iam.mathematik.hu-berlin.de/~romisch/SP01/Uryasev.pdf
+  sapply(probs, function(prob) {
+    if (!UpperTail) x <- -x
+    VaR <- quantile(x, prob, type = 1)
+    psi <- mean(x <= VaR)
+    lambda <- (psi - prob) / (1 - prob)
+    CVaRp <- mean(x[x > VaR])
+    if (is.nan(CVaRp)) {
+      lambda <- 1
+      CVaRp <- 0
+    }
+    (lambda * VaR + (1 - lambda) * CVaRp) * 
+      ifelse(UpperTail, 1, -1)
+  })
 }
