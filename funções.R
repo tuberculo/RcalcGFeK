@@ -30,8 +30,6 @@ calcK <- function(Pot = PDisp, CVU = 250, Inflex = 0, CalculaGF = TRUE, UsaPond 
               COPpot = COPano / Pot / 1000, CECpot = CECano / Pot / 1000, LACEpot = LACEano / Pot / 1000)
 }
 
-
-
 CVaRsort <- function(x, probs = 0.5, UpperTail = TRUE) {
   names(probs) <- paste0(probs * 100, "%")
   sapply(probs, function(y) mean(sort(x, decreasing = UpperTail)[1:((1 - y) * length(x))]))
